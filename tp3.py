@@ -87,7 +87,7 @@ wav.write("./vocal.wav",fs,vocal.astype(audio.dtype))
 plt.figure(4)
 
 plt.plot(f4,10 * np.log10(pxx4,where=pxx4>0))
-plt.plot(f,10 * np.log10(sx,where=sx>0))
+plt.plot(w,10 * np.log10(pxx,where=pxx>0))
 
 plt.title('Comparación entre periodograma del audio sintetizado y estimación de la PSD teórica')
 plt.legend(['Periodograma','PSD teórica con parámetros estimados'])
