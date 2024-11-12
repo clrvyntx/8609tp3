@@ -3,6 +3,18 @@ import matplotlib.pyplot as plt
 import scipy.io.wavfile as wav
 import scipy.signal as sgn
 
+def suavizar_bordes(x, fade):
+    m = len(x)
+    fade = min(max(fade, 1), 50)
+
+    n = 2 * int(fade / 100 * m) // 2
+    v = np.hamming(n)
+
+    fade_in = v[:n // 2]
+    fade_out = v[n // 2:]
+
+    return np.concatenate((fade_in, np.ones(m - n), fade_out)) * x
+
 def autocorrelacion(x):
     return sgn.correlate(x,x,method='direct') / len(x)**2
 
@@ -22,14 +34,19 @@ def param_ar(x, p):
 
     return np.append(1,-a), np.sqrt(g)
 
-def generar_vocal(a, g, fs, t, f0):
+def generar_fonema(a, g, fs, t, f0):
     n = int(fs * t)
     d = int(fs / f0)
     l = int(t * f0)
-    vocal = np.zeros(n)
+    fonema = np.zeros(n)
     for i in range(0,l):
-        vocal[d * i] = np.sqrt(fs / f0)
-    return sgn.lfilter(g,a,vocal)
+        fonema[d * i] = np.sqrt(fs / f0)
+    return sgn.lfilter(g,a,fonema)
+
+def concatenar_fonemas(fonemas,fade):
+    for i in range(0,len(fonemas)):
+        fonemas[i] = suavizar_bordes(fonemas[i],fade)
+    return np.concatenate(fonemas, axis=None)
 
 fs, audio = wav.read("./archivos/a.wav")
 audio = np.array(audio,dtype=np.float64)
@@ -80,9 +97,9 @@ plt.xlabel('Frecuencia [f]')
 plt.ylabel('Amplitud [dB]')
 plt.grid()
 
-vocal = generar_vocal(a,g,fs,0.5,100)
-f4, pxx4 = sgn.welch(vocal,fs=fs,window='hamming',nperseg=100,noverlap=50,nfft=4096)
-wav.write("./vocal.wav",fs,vocal.astype(audio.dtype))
+fonema = generar_fonema(a,g,fs,0.5,100)
+f4, pxx4 = sgn.welch(fonema,fs=fs,window='hamming',nperseg=100,noverlap=50,nfft=4096)
+wav.write("./fonema.wav",fs,fonema.astype(audio.dtype))
 
 plt.figure(4)
 
