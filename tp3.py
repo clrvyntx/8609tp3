@@ -82,6 +82,7 @@ plt.grid()
 
 vocal = generar_vocal(a,g,fs,0.5,100)
 f4, pxx4 = sgn.welch(vocal,fs=fs,window='hamming',nperseg=100,noverlap=50,nfft=4096)
+wav.write("./vocal.wav",fs,vocal.astype(audio.dtype))
 
 plt.figure(4)
 
@@ -93,7 +94,5 @@ plt.legend(['Periodograma','PSD teórica con parámetros estimados'])
 plt.xlabel('Frecuencia [f]')
 plt.ylabel('Amplitud [dB]')
 plt.grid()
-
-wav.write("./vocal.wav",fs,vocal.astype(audio.dtype))
 
 plt.show()
