@@ -16,7 +16,7 @@ def suavizar_bordes(x, fade):
     return np.concatenate((fade_in, np.ones(m - n), fade_out)) * x
 
 def autocorrelacion(x):
-    return sgn.correlate(x,x,method='direct') / len(x)**2
+    return sgn.correlate(x,x,method='direct') / len(x)
 
 def param_ar(x, p):
     rx = autocorrelacion(x)
@@ -48,7 +48,7 @@ def concatenar_fonemas(fonemas,fade):
         fonemas[i] = suavizar_bordes(fonemas[i],fade)
     return np.concatenate(fonemas, axis=None)
 
-fs, audio = wav.read("./archivos/a.wav")
+fs, audio = wav.read("./archivos/sh.wav")
 audio = np.array(audio,dtype=np.float64)
 muestras = len(audio)
 duracion = muestras / fs
@@ -72,7 +72,7 @@ pxx = np.abs(h)**2
 plt.figure(2)
 
 plt.plot(f,10 * np.log10(sx,where=sx>0))
-plt.plot(w,10 * np.log10(pxx,where=pxx>0))
+plt.plot(w,10 * np.log10(pxx,where=pxx>0) - 40)
 
 plt.title('Comparación entre periodograma del audio real y estimación de la PSD teórica')
 plt.legend(['Periodograma','PSD teórica con parámetros estimados'])
@@ -89,7 +89,7 @@ plt.figure(3)
 plt.plot(f3,10 * np.log10(pxx3,where=pxx3>0))
 plt.plot(f2,10 * np.log10(pxx2,where=pxx2>0))
 plt.plot(f1,10 * np.log10(pxx1,where=pxx1>0))
-plt.plot(w,10 * np.log10(pxx,where=pxx>0))
+plt.plot(w,10 * np.log10(pxx,where=pxx>0) - 40)
 
 plt.title('Comparación entre método de Welch y estimación de la PSD teórica')
 plt.legend(['Welch con M = 10','Welch con M = 100','Welch con M = 1000','PSD teórica con parámetros estimados'])
@@ -99,12 +99,12 @@ plt.grid()
 
 fonema = generar_fonema(a,g,fs,0.5,100)
 f4, pxx4 = sgn.welch(fonema,fs=fs,window='hamming',nperseg=100,noverlap=50,nfft=4096)
-wav.write("./fonema.wav",fs,fonema.astype(audio.dtype))
+wav.write("./fonema.wav",fs,fonema.astype(np.int16))
 
 plt.figure(4)
 
-plt.plot(f4,10 * np.log10(pxx4,where=pxx4>0) + 40)
-plt.plot(w,10 * np.log10(pxx,where=pxx>0))
+plt.plot(f4,10 * np.log10(pxx4,where=pxx4>0))
+plt.plot(w,10 * np.log10(pxx,where=pxx>0) - 40)
 
 plt.title('Comparación entre periodograma del audio sintetizado y estimación de la PSD teórica')
 plt.legend(['Periodograma','PSD teórica con parámetros estimados'])
