@@ -43,73 +43,86 @@ def generar_fonema(a, g, fs, t, f0):
         fonema[d * i] = np.sqrt(fs / f0)
     return sgn.lfilter(g,a,fonema)
 
-def concatenar_fonemas(fonemas,fade):
+def concatenar_fonemas(fonemas,fs,fade):
     for i in range(0,len(fonemas)):
         fonemas[i] = suavizar_bordes(fonemas[i],fade)
-    return np.concatenate(fonemas, axis=None)
+    wav.write("./fonemas_concatenados.wav",fs,np.concatenate(fonemas, axis=None).astype(np.int16))
 
-fs, audio = wav.read("./archivos/sh.wav")
-audio = np.array(audio,dtype=np.float64)
-muestras = len(audio)
-duracion = muestras / fs
-t = np.linspace(0,duracion,muestras)
+def analisis_archivo(archivo,p,f0,tf):
+    fs, audio = wav.read("./archivos/" + archivo)
+    audio = np.array(audio,dtype=np.float64)
+    muestras = len(audio)
+    duracion = muestras / fs
+    t = np.linspace(0,duracion,muestras)
 
-plt.figure(1)
+    plt.figure(1)
 
-plt.plot(t,audio)
-plt.title('Señal de audio original')
-plt.xlabel('Tiempo [s]')
-plt.ylabel('Amplitud')
-plt.grid()
+    plt.plot(t,audio)
+    plt.title('Señal de audio ' + archivo)
+    plt.xlabel('Tiempo [s]')
+    plt.ylabel('Amplitud')
+    plt.grid()
 
-p = 20
-a, g = param_ar(audio,p)
+    f, sx = sgn.periodogram(audio,fs=fs,nfft=4096)
+    a, g = param_ar(audio,p)
+    w, h = sgn.freqz(g,a,fs=fs)
+    pxx = np.abs(h)**2
 
-f, sx = sgn.periodogram(audio,fs=fs,nfft=4096)
-w, h = sgn.freqz(g,a,fs=fs)
-pxx = np.abs(h)**2
+    plt.figure(2)
 
-plt.figure(2)
+    plt.plot(f,10 * np.log10(sx,where=sx>0))
+    plt.plot(w,10 * np.log10(pxx,where=pxx>0) - 40)
 
-plt.plot(f,10 * np.log10(sx,where=sx>0))
-plt.plot(w,10 * np.log10(pxx,where=pxx>0) - 40)
+    plt.title('Comparación entre periodograma y estimación de la PSD teórica del archivo ' + archivo)
+    plt.legend(['Periodograma','PSD teórica con parámetros estimados'])
+    plt.xlabel('Frecuencia [f]')
+    plt.ylabel('Amplitud [dB]')
+    plt.grid()
 
-plt.title('Comparación entre periodograma del audio real y estimación de la PSD teórica')
-plt.legend(['Periodograma','PSD teórica con parámetros estimados'])
-plt.xlabel('Frecuencia [f]')
-plt.ylabel('Amplitud [dB]')
-plt.grid()
+    f1, pxx1 = sgn.welch(audio,fs=fs,window='hamming',nperseg=10,noverlap=5,nfft=4096)
+    f2, pxx2 = sgn.welch(audio,fs=fs,window='hamming',nperseg=100,noverlap=50,nfft=4096)
+    f3, pxx3 = sgn.welch(audio,fs=fs,window='hamming',nperseg=1000,noverlap=500,nfft=4096)
 
-f1, pxx1 = sgn.welch(audio,fs=fs,window='hamming',nperseg=10,noverlap=5,nfft=4096)
-f2, pxx2 = sgn.welch(audio,fs=fs,window='hamming',nperseg=100,noverlap=50,nfft=4096)
-f3, pxx3 = sgn.welch(audio,fs=fs,window='hamming',nperseg=1000,noverlap=500,nfft=4096)
+    plt.figure(3)
 
-plt.figure(3)
+    plt.plot(f3,10 * np.log10(pxx3,where=pxx3>0))
+    plt.plot(f2,10 * np.log10(pxx2,where=pxx2>0))
+    plt.plot(f1,10 * np.log10(pxx1,where=pxx1>0))
+    plt.plot(w,10 * np.log10(pxx,where=pxx>0) - 40)
 
-plt.plot(f3,10 * np.log10(pxx3,where=pxx3>0))
-plt.plot(f2,10 * np.log10(pxx2,where=pxx2>0))
-plt.plot(f1,10 * np.log10(pxx1,where=pxx1>0))
-plt.plot(w,10 * np.log10(pxx,where=pxx>0) - 40)
+    plt.title('Comparación entre método de Welch y estimación de la PSD teórica del archivo ' + archivo)
+    plt.legend(['Welch con M = 10','Welch con M = 100','Welch con M = 1000','PSD teórica con parámetros estimados'])
+    plt.xlabel('Frecuencia [f]')
+    plt.ylabel('Amplitud [dB]')
+    plt.grid()
 
-plt.title('Comparación entre método de Welch y estimación de la PSD teórica')
-plt.legend(['Welch con M = 10','Welch con M = 100','Welch con M = 1000','PSD teórica con parámetros estimados'])
-plt.xlabel('Frecuencia [f]')
-plt.ylabel('Amplitud [dB]')
-plt.grid()
+    fonema = generar_fonema(a,g,fs,tf,f0)
+    f4, pxx4 = sgn.welch(fonema,fs=fs,window='hamming',nperseg=100,noverlap=50,nfft=4096)
+    wav.write("./" + archivo,fs,fonema.astype(np.int16))
 
-fonema = generar_fonema(a,g,fs,0.5,100)
-f4, pxx4 = sgn.welch(fonema,fs=fs,window='hamming',nperseg=100,noverlap=50,nfft=4096)
-wav.write("./fonema.wav",fs,fonema.astype(np.int16))
+    plt.figure(4)
 
-plt.figure(4)
+    plt.plot(f4,10 * np.log10(pxx4,where=pxx4>0))
+    plt.plot(w,10 * np.log10(pxx,where=pxx>0) - 40)
 
-plt.plot(f4,10 * np.log10(pxx4,where=pxx4>0))
-plt.plot(w,10 * np.log10(pxx,where=pxx>0) - 40)
+    plt.title('Comparación entre periodograma del audio sintetizado y estimación de la PSD teórica del archivo ' + archivo)
+    plt.legend(['Periodograma','PSD teórica con parámetros estimados'])
+    plt.xlabel('Frecuencia [f]')
+    plt.ylabel('Amplitud [dB]')
+    plt.grid()
 
-plt.title('Comparación entre periodograma del audio sintetizado y estimación de la PSD teórica')
-plt.legend(['Periodograma','PSD teórica con parámetros estimados'])
-plt.xlabel('Frecuencia [f]')
-plt.ylabel('Amplitud [dB]')
-plt.grid()
+    plt.show()
 
-plt.show()
+    return fonema, fs
+
+a, fs = analisis_archivo("a.wav",20,100,0.5)
+e, fs = analisis_archivo("e.wav",20,100,0.5)
+f, fs = analisis_archivo("f.wav",20,100,0.5)
+i, fs = analisis_archivo("i.wav",20,100,0.5)
+j, fs = analisis_archivo("j.wav",20,100,0.1)
+o, fs = analisis_archivo("o.wav",20,100,0.5)
+s, fs = analisis_archivo("s.wav",20,100,0.5)
+sh, fs = analisis_archivo("sh.wav",20,100,0.5)
+u, fs = analisis_archivo("u.wav",20,100,0.5)
+
+concatenar_fonemas([a,e,i,o,u],fs,30)
