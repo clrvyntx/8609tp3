@@ -49,10 +49,10 @@ def generar_fonema_vocal(a, g, fs, t, f0):
         fonema[d * i] = np.sqrt(fs / f0)
     return sgn.lfilter(g,a,fonema)
 
-def concatenar_fonemas(fonemas,fs,fade):
+def concatenar_fonemas(archivo,fonemas,fs,fade):
     for i in range(0,len(fonemas)):
         fonemas[i] = suavizar_bordes(fonemas[i],fade)
-    wav.write("./fonemas_concatenados.wav",fs,np.concatenate(fonemas, axis=None).astype(np.int16))
+    wav.write("./" + archivo,fs,np.concatenate(fonemas, axis=None).astype(np.int16))
 
 def analisis_archivo(archivo,p,f0,tf):
     fs, audio = wav.read("./archivos/" + archivo)
@@ -135,4 +135,4 @@ s, fs = analisis_archivo("s.wav",20,0,0.5)
 sh, fs = analisis_archivo("sh.wav",20,0,0.5)
 u, fs = analisis_archivo("u.wav",20,100,0.5)
 
-concatenar_fonemas([a,e,i,o,u,f,j,s,sh],fs,30)
+concatenar_fonemas("fonemas_concatenados.wav",[a,e,i,o,u,f,j,s,sh],fs,30)
