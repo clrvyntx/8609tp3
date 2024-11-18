@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.io.wavfile as wav
 import scipy.signal as sgn
+import scipy.stats as stat
 
 def suavizar_bordes(x, fade):
     m = len(x)
@@ -34,7 +35,12 @@ def param_ar(x, p):
 
     return np.append(1,-a), np.sqrt(g)
 
-def generar_fonema(a, g, fs, t, f0):
+def generar_fonema_sordo(a, g, fs, t):
+    n = int(fs * t)
+    fonema = stat.norm.rvs(loc=0,scale=1,size=n)
+    return sgn.lfilter(g,a,fonema)
+
+def generar_fonema_vocal(a, g, fs, t, f0):
     n = int(fs * t)
     d = int(fs / f0)
     l = int(t * f0)
@@ -96,7 +102,11 @@ def analisis_archivo(archivo,p,f0,tf):
     plt.ylabel('Amplitud [dB]')
     plt.grid()
 
-    fonema = generar_fonema(a,g,fs,tf,f0)
+    if(f0 == 0):
+        fonema = generar_fonema_sordo(a,g,fs,tf)
+    else:
+        fonema = generar_fonema_vocal(a,g,fs,tf,f0)
+
     f4, pxx4 = sgn.welch(fonema,fs=fs,window='hamming',nperseg=100,noverlap=50,nfft=4096)
     wav.write("./" + archivo,fs,fonema.astype(np.int16))
 
@@ -117,12 +127,12 @@ def analisis_archivo(archivo,p,f0,tf):
 
 a, fs = analisis_archivo("a.wav",20,100,0.5)
 e, fs = analisis_archivo("e.wav",20,100,0.5)
-f, fs = analisis_archivo("f.wav",20,100,0.5)
+f, fs = analisis_archivo("f.wav",20,0,0.5)
 i, fs = analisis_archivo("i.wav",20,100,0.5)
-j, fs = analisis_archivo("j.wav",20,100,0.1)
+j, fs = analisis_archivo("j.wav",20,0,0.5)
 o, fs = analisis_archivo("o.wav",20,100,0.5)
-s, fs = analisis_archivo("s.wav",20,100,0.5)
-sh, fs = analisis_archivo("sh.wav",20,100,0.5)
+s, fs = analisis_archivo("s.wav",20,0,0.5)
+sh, fs = analisis_archivo("sh.wav",20,0,0.5)
 u, fs = analisis_archivo("u.wav",20,100,0.5)
 
-concatenar_fonemas([a,e,i,o,u],fs,30)
+concatenar_fonemas([a,e,i,o,u,f,j,s,sh],fs,30)
