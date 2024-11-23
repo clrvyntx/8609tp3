@@ -60,7 +60,6 @@ def analisis_archivo(archivo,p,f0,tf):
     muestras = len(audio)
     duracion = muestras / fs
     t = np.linspace(0,duracion,muestras)
-    offset = 10 * np.log10(muestras)
 
     plt.figure(1)
 
@@ -73,12 +72,12 @@ def analisis_archivo(archivo,p,f0,tf):
     f, sx = sgn.periodogram(audio,fs=fs,nfft=4096)
     a, g = param_ar(audio,p)
     w, h = sgn.freqz(g,a,fs=fs)
-    pxx = np.abs(h)**2
+    pxx = np.abs(h)**2 / muestras
 
     plt.figure(2)
 
     plt.plot(f,10 * np.log10(sx,where=sx>0))
-    plt.plot(w,10 * np.log10(pxx,where=pxx>0) - offset)
+    plt.plot(w,10 * np.log10(pxx,where=pxx>0))
 
     plt.title('Comparación entre periodograma y estimación de la PSD teórica del archivo ' + archivo)
     plt.legend(['Periodograma','PSD teórica con parámetros estimados'])
@@ -95,7 +94,7 @@ def analisis_archivo(archivo,p,f0,tf):
     plt.plot(f3,10 * np.log10(pxx3,where=pxx3>0))
     plt.plot(f2,10 * np.log10(pxx2,where=pxx2>0))
     plt.plot(f1,10 * np.log10(pxx1,where=pxx1>0))
-    plt.plot(w,10 * np.log10(pxx,where=pxx>0) - offset)
+    plt.plot(w,10 * np.log10(pxx,where=pxx>0))
 
     plt.title('Comparación entre método de Welch y estimación de la PSD teórica del archivo ' + archivo)
     plt.legend(['Welch con M = 10','Welch con M = 100','Welch con M = 1000','PSD teórica con parámetros estimados'])
@@ -114,7 +113,7 @@ def analisis_archivo(archivo,p,f0,tf):
     plt.figure(4)
 
     plt.plot(f4,10 * np.log10(pxx4,where=pxx4>0))
-    plt.plot(w,10 * np.log10(pxx,where=pxx>0) - offset)
+    plt.plot(w,10 * np.log10(pxx,where=pxx>0))
 
     plt.title('Comparación entre periodograma del audio sintetizado y estimación de la PSD teórica del archivo ' + archivo)
     plt.legend(['Periodograma','PSD teórica con parámetros estimados'])
